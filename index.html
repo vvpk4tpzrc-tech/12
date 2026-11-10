@@ -1,0 +1,837 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Stars On</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&display=swap">
+<style>
+/* Layout: screen 1 is the lit apartment that goes dark. Tapping it opens a phone-sized app over the same night sky:
+   top bar, one scrolling screen, bottom tab bar (stars / quests / collection). Person emoji opens the house; the house opens Add friend.
+   Boxes take their colour and grain from the glitter-on-skin references: peach, dusty rose, bruise violet, silver specks.
+   Single dark look by design (a night sky), so no light/dark switch. */
+:root {
+  --ink: #0E1124;
+  --sky-top-lit: #3A3F66;
+  --sky-bottom-lit: #A86F4F;
+  --sky-top-dark: #0E1124;
+  --sky-bottom-dark: #1D2145;
+  --star: #EEF2FF;
+  --periwinkle: #8FA2DA;
+  --beige: #D8C6AB;
+  --brown: #3B291D;
+  --brown-edge: #4D3827;
+  --brown-deep: #241810;
+  --window-on: #F4B860;
+  --window-off: #2C1E15;
+  --door: #1B120C;
+
+  --skin: #EBCFC2;
+  --blush: #C98FA0;
+  --bruise: #2B2558;
+  --plum: #2A1D33;
+  --plum-2: #3E2A48;
+  --plum-deep: #1B1223;
+  --silver: #DCE2F2;
+  --ink-on-skin: #2A1D33;
+  --muted-on-skin: #7A5266;
+  --line: rgba(235, 207, 194, 0.28);
+  --dim: rgba(238, 242, 255, 0.28);
+
+  --font-display: 'Climate Crisis', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Climate Crisis', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --font-body: 'Climate Crisis', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --ground-h: clamp(28px, 6vh, 56px);
+  --tab-h: 64px;
+
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .92  0 0 0 0 .88  0 0 0 .1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--ink); color: var(--star); font-family: var(--font-body); font-size: 13px; -webkit-tap-highlight-color: transparent; }
+button, input { font-family: inherit; color: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--periwinkle); outline-offset: 3px; }
+
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+
+/* ---------- Screen 1: apartment ---------- */
+.stage {
+  position: relative; z-index: 1; box-sizing: border-box; min-height: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: clamp(20px, 7vh, 64px);
+  padding-bottom: calc(var(--ground-h) - 2px);
+}
+h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(34px, 11vw, 58px); line-height: 1; letter-spacing: -0.01em;
+  color: var(--star); display: flex; align-items: center; white-space: nowrap;
+}
+h1 .gap { display: inline-block; width: 0.3em; }
+h1 .glyph { display: inline-block; width: 0.8em; height: 0.8em; margin: 0 0.02em; }
+h1 .glyph path { fill: var(--blush); }
+.sub-mono { margin: 14px 0 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--skin); opacity: 0.8; text-transform: uppercase; }
+.spacer { flex: 1 1 auto; min-height: 24px; }
+.hint { margin: 0 0 14px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--beige); opacity: 0.6; transition: opacity 900ms ease; }
+.stage.ready .hint { opacity: 1; }
+.building { appearance: none; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; display: block; transition: transform 220ms ease; }
+.building:hover { transform: translateY(-2px); }
+.building:active { transform: translateY(0) scale(0.99); }
+.building svg { display: block; height: clamp(220px, 46vh, 340px); width: auto; }
+.blur { filter: url(#soft); }
+.win .glow { fill: var(--window-on); opacity: 0.55; transition: opacity 700ms ease; }
+.win .pane { fill: var(--window-on); transition: fill 700ms ease; }
+.win.off .glow { opacity: 0; }
+.win.off .pane { fill: var(--window-off); }
+.door { fill: var(--door); }
+.door-light { fill: var(--window-on); opacity: 0; }
+.stage.ready .door-light { opacity: 0.5; animation: pulse 2.8s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 0.22; } 50% { opacity: 0.62; } }
+.ground { position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--ground-h) + env(safe-area-inset-bottom, 0px)); background: var(--brown-deep); border-top: 1px solid var(--brown-edge); z-index: 1; }
+
+/* ---------- App shell ---------- */
+.app { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; }
+.app-in { width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.topbar {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px)); padding-bottom: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.brand { appearance: none; background: none; border: 0; padding: 6px 0; cursor: pointer; font-family: var(--font-display); font-size: 20px; color: var(--star); display: flex; align-items: center; }
+.brand svg { width: 0.8em; height: 0.8em; margin: 0 0.04em; }
+.brand svg path { fill: var(--blush); }
+.who { appearance: none; background: var(--plum); border: 1px solid var(--line); border-radius: 999px; width: 40px; height: 40px; font-size: 20px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+.who:hover { border-color: var(--blush); }
+
+.screens { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.screen { display: none; flex-direction: column; gap: 16px; padding: 6px max(16px, env(safe-area-inset-right, 0px)) 28px max(16px, env(safe-area-inset-left, 0px)); }
+.screen.on { display: flex; }
+.label { margin: 0; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blush); }
+.h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; line-height: 1.15; text-wrap: balance; }
+.sub { margin: 0; font-size: 12px; line-height: 1.75; color: var(--skin); }
+.sample { align-self: flex-start; font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--skin); border: 1px dashed var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+
+/* boxes: peach / rose glow + fine grain */
+.card {
+  background-color: var(--plum);
+  background-image: radial-gradient(120% 90% at 0% 0%, rgba(201, 143, 160, 0.3), transparent 58%), radial-gradient(90% 70% at 100% 100%, rgba(143, 162, 218, 0.16), transparent 62%), var(--grain);
+  border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; position: relative;
+}
+.card.paper {
+  background-color: var(--skin); color: var(--ink-on-skin); border-color: transparent;
+  background-image: radial-gradient(110% 90% at 100% 0%, rgba(201, 143, 160, 0.6), transparent 60%), radial-gradient(80% 70% at 0% 100%, rgba(255, 255, 255, 0.35), transparent 60%), var(--grain);
+}
+.paper .label { color: var(--muted-on-skin); }
+.paper .sample { color: var(--muted-on-skin); border-color: rgba(42, 29, 51, 0.35); }
+.paper .quest-now { font-size: 16px; }
+.paper .btn { background: var(--plum-deep); color: var(--skin); }
+.paper .btn[aria-pressed="true"] { background: var(--muted-on-skin); color: var(--star); border: 0; }
+.chart-card {
+  background-color: var(--bruise); border-color: rgba(201, 143, 160, 0.5);
+  background-image: radial-gradient(70% 60% at 14% 18%, rgba(201, 143, 160, 0.38), transparent 62%), radial-gradient(70% 60% at 90% 90%, rgba(143, 162, 218, 0.3), transparent 62%), var(--grain);
+}
+.chart-card::before, .chart-card::after { content: ""; position: absolute; width: 12px; height: 12px; border: solid var(--skin); opacity: 0.8; }
+.chart-card::before { left: 6px; top: 6px; border-width: 1px 0 0 1px; }
+.chart-card::after { right: 6px; bottom: 6px; border-width: 0 1px 1px 0; }
+.card.event { background-color: rgba(220, 226, 242, 0.08); background-image: var(--grain); border: 1px dashed rgba(220, 226, 242, 0.5); }
+
+.tabbar { flex: none; display: flex; justify-content: center; background: var(--plum-deep); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabbar-in { width: 100%; max-width: 480px; display: grid; grid-template-columns: repeat(3, 1fr); }
+.tab { appearance: none; background: none; border: 0; height: var(--tab-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--skin); opacity: 0.55; cursor: pointer; }
+.tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-current="page"] { opacity: 1; color: var(--star); }
+.tab[aria-current="page"] svg { stroke: var(--blush); }
+
+/* ---------- Screen 2: stars ---------- */
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.day { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--skin); }
+.day svg { width: 100%; max-width: 36px; height: auto; aspect-ratio: 1; overflow: visible; }
+.day .s-fill { fill: var(--dim); }
+.day.done .s-fill { fill: var(--star); filter: drop-shadow(0 0 5px rgba(201, 143, 160, 0.95)); }
+.day .ring { fill: none; stroke: transparent; stroke-width: 1.4; }
+.day.today .ring { stroke: var(--blush); }
+.day.today { color: var(--star); }
+.day.future { opacity: 0.45; }
+.con-wrap { position: relative; }
+.con { width: 100%; height: auto; display: block; overflow: visible; }
+.con .ln { stroke: var(--skin); stroke-width: 1.2; vector-effect: non-scaling-stroke; opacity: 0.9; }
+.con .ln-off { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 1.5 2.5; vector-effect: non-scaling-stroke; opacity: 0.7; }
+.con .grid { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 0.4 3; vector-effect: non-scaling-stroke; opacity: 0.5; }
+.con .off { fill: none; stroke: var(--dim); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.con .bonus-off { fill: none; stroke: var(--dim); stroke-width: 1.2; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+.con .on { fill: var(--star); filter: drop-shadow(0 0 4px rgba(201, 143, 160, 0.95)); }
+.con .cap { font-family: var(--font-mono); font-size: 3px; fill: var(--skin); text-anchor: middle; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row > * { min-width: 0; }
+.btn { appearance: none; background: var(--blush); color: var(--plum-deep); border: 0; border-radius: 999px; padding: 12px 20px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+.btn.ghost { background: none; color: var(--star); border: 1px solid var(--line); }
+.btn.ghost:hover { border-color: var(--blush); }
+.btn[aria-pressed="true"] { background: var(--plum-2); color: var(--star); border: 1px solid var(--blush); }
+.quest-now { font-size: 14px; line-height: 1.55; margin: 0; }
+.big { font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+
+/* glitter: only when a star lights */
+.glit { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: var(--c); box-shadow: 0 0 5px var(--c); pointer-events: none; animation: glit 1000ms ease-out forwards; z-index: 3; }
+@keyframes glit { 0% { opacity: 1; transform: translate(0, 0) scale(1.2); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); } }
+
+/* ---------- Screen 3: quests ---------- */
+.gauge { display: flex; align-items: center; gap: 18px; }
+.ring-wrap { position: relative; width: 112px; height: 112px; flex: none; }
+.ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-wrap .trk { fill: none; stroke: var(--plum-2); stroke-width: 9; }
+.ring-wrap .bar { fill: none; stroke: var(--blush); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 600ms ease; }
+.ring-mid { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.ring-mid .big { font-size: 22px; }
+.ring-mid span { font-family: var(--font-mono); font-size: 9px; color: var(--skin); margin-top: 6px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat { background: rgba(27, 18, 35, 0.55); border: 1px solid var(--line); border-radius: 4px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.stat span { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--skin); }
+.qlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.q { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.6; }
+li:first-child > .q { border-top: 0; }
+.q .d { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.02em; color: var(--blush); }
+.q .st { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--dim); display: grid; place-items: center; }
+.q.done .st { background: var(--blush); border-color: var(--blush); }
+.q.done .st::after { content: ""; width: 5px; height: 9px; border: solid var(--plum-deep); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.q.miss { color: var(--dim); }
+.q.future { opacity: 0.45; }
+button.q { appearance: none; width: calc(100% + 20px); margin: 0 -10px; padding-left: 10px; padding-right: 10px; text-align: left; background: var(--plum-2); border: 0; border-radius: 6px; cursor: pointer; color: inherit; font-size: 12px; }
+button.q:hover { outline: 1px solid var(--blush); }
+
+/* ---------- Screen 4: collection ---------- */
+.shelf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.slot { background-color: var(--plum); background-image: var(--grain); border: 1px solid var(--line); border-radius: 999px 999px 6px 6px; padding: 22px 6px 10px; display: flex; flex-direction: column; gap: 3px; align-items: center; min-width: 0; text-align: center; }
+.slot.now { background-color: var(--bruise); border-color: var(--blush); background-image: radial-gradient(80% 60% at 50% 20%, rgba(201, 143, 160, 0.35), transparent 70%), var(--grain); }
+.slot svg { width: 86%; height: auto; aspect-ratio: 108 / 66; overflow: visible; margin-bottom: 4px; }
+.slot .m { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.06em; color: var(--blush); }
+.slot .sg { font-family: var(--font-display); font-size: 10px; color: var(--star); }
+.slot .rg { font-family: var(--font-mono); font-size: 7px; color: var(--skin); opacity: 0.8; }
+.slot:not(.now) .sg { opacity: 0.6; }
+
+/* ---------- House + Add friend ---------- */
+.nav { appearance: none; background: none; border: 1px solid var(--line); border-radius: 999px; width: 32px; height: 32px; color: var(--star); font-size: 14px; line-height: 1; cursor: pointer; flex: none; }
+.nav:disabled { opacity: 0.3; cursor: default; }
+.nav:not(:disabled):hover { border-color: var(--blush); }
+.back { appearance: none; background: none; border: 0; padding: 6px 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--skin); cursor: pointer; align-self: flex-start; }
+.house { display: flex; justify-content: center; }
+.house svg { height: 240px; width: auto; max-width: 100%; display: block; }
+.house .hw .pane { fill: var(--window-on); }
+.house .hw .glow { fill: var(--window-on); opacity: 0.5; }
+.house .hw.off .pane { fill: var(--window-off); }
+.house .hw.off .glow { opacity: 0; }
+.house .hw.empty .pane { fill: #1E1510; }
+.house .hw.empty .glow { opacity: 0; }
+.house .hw.me .frame { stroke: var(--blush); stroke-width: 2; fill: none; }
+.flist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.f { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.f:first-child { border-top: 0; }
+.f small { font-family: var(--font-mono); font-size: 9px; color: var(--skin); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot.on { background: var(--window-on); box-shadow: 0 0 8px rgba(244, 184, 96, 0.8); }
+.dot.off { background: var(--window-off); border: 1px solid var(--brown-edge); }
+.code { font-family: var(--font-mono); font-size: 16px; letter-spacing: 0.1em; }
+.codebox { font-family: var(--font-mono); font-size: 22px; letter-spacing: 0.14em; text-align: center; padding: 18px 0; border: 1px dashed var(--line); border-radius: 4px; background: rgba(27, 18, 35, 0.5); }
+.add { display: flex; gap: 8px; }
+.add input { flex: 1 1 auto; min-width: 0; background: rgba(27, 18, 35, 0.6); color: var(--star); border: 1px solid var(--line); border-radius: 999px; padding: 13px 18px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.08em; }
+.add input::placeholder { color: var(--dim); letter-spacing: 0.06em; }
+.msg { min-height: 1.4em; margin: 0; font-family: var(--font-mono); font-size: 10px; line-height: 1.6; color: var(--skin); }
+.steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.steps li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 12px; line-height: 1.7; color: var(--skin); }
+.steps li::before { content: ""; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--blush); box-shadow: 0 0 6px rgba(201, 143, 160, 0.8); justify-self: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .win .glow, .win .pane, .hint, .building, .ring-wrap .bar { transition: none; }
+  .stage.ready .door-light { animation: none; opacity: 0.45; }
+  .glit { display: none; }
+}
+</style>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<!-- ===== Screen 1 ===== -->
+<main class="stage" id="stage">
+  <h1 aria-label="Stars On">
+    <span aria-hidden="true">St</span>
+    <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.5.8-5.6 5 1.6 7.4L12 17.8 5.4 21.7 7 14.3 1.4 9.3l7.5-.8z"/></svg>
+    <span aria-hidden="true">rs</span>
+    <span class="gap" aria-hidden="true"></span>
+    <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.5.8-5.6 5 1.6 7.4L12 17.8 5.4 21.7 7 14.3 1.4 9.3l7.5-.8z"/></svg>
+    <span aria-hidden="true">n</span>
+  </h1>
+  <p class="sub-mono">perpetual calendar</p>
+  <div class="spacer"></div>
+  <p class="hint" id="hint">Tap the building to go in</p>
+  <button class="building" id="enter" type="button" aria-label="Go into the building">
+    <svg viewBox="0 0 180 300" role="img" aria-hidden="true">
+      <defs><filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter></defs>
+      <rect x="118" y="6" width="26" height="16" rx="2" fill="var(--brown-deep)"/>
+      <rect x="20" y="30" width="140" height="270" rx="3" fill="var(--brown)"/>
+      <rect x="14" y="22" width="152" height="12" rx="2" fill="var(--brown-edge)"/>
+      <g id="windows"></g>
+      <rect class="door" x="76" y="254" width="28" height="46" rx="14" ry="14"/>
+      <rect class="door-light" x="80" y="262" width="20" height="38" rx="10" ry="10"/>
+    </svg>
+  </button>
+</main>
+<div class="ground" id="ground" aria-hidden="true"></div>
+
+<!-- ===== App ===== -->
+<div class="app" id="app" hidden>
+  <div class="app-in">
+    <header class="topbar">
+      <button class="brand" id="home" type="button" aria-label="Stars On, back to the first screen">St<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.5.8-5.6 5 1.6 7.4L12 17.8 5.4 21.7 7 14.3 1.4 9.3l7.5-.8z"/></svg>rs <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.5.8-5.6 5 1.6 7.4L12 17.8 5.4 21.7 7 14.3 1.4 9.3l7.5-.8z"/></svg>n</button>
+      <button class="who" id="who" type="button" aria-label="Open the house">🙂</button>
+    </header>
+
+    <div class="screens" id="screens">
+
+      <!-- Screen 2 -->
+      <section class="screen" id="v-today" aria-label="Stars">
+        <p class="label" id="t-month"></p>
+        <h2 class="h2">This week's stars</h2>
+        <div class="card">
+          <div class="row"><button class="nav" id="wk-prev" type="button" aria-label="Previous week">‹</button><p class="label" id="wk-range"></p><button class="nav" id="wk-next" type="button" aria-label="Next week">›</button></div>
+          <div class="week" id="week"></div>
+          <p class="sub" id="week-note"></p>
+        </div>
+        <div class="card paper">
+          <p class="label">Today's quest</p>
+          <p class="quest-now" id="today-q"></p>
+          <button class="btn" id="today-btn" type="button" aria-pressed="false">Done</button>
+        </div>
+        <h2 class="h2" id="con-title"></h2>
+        <div class="card chart-card">
+          <div class="con-wrap" id="con-big"></div>
+          <p class="sub" id="con-note"></p>
+        </div>
+        <div class="card event">
+          <p class="label">Event quest · Bonus star</p>
+          <p class="quest-now">After sunset, spend one hour with only one light on</p>
+          <div class="row">
+            <p class="sub">Finish it and an extra star lights up beside the constellation.</p>
+            <button class="btn ghost" id="ev-btn" type="button" aria-pressed="false">Done</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3 -->
+      <section class="screen" id="v-quests" aria-label="Quests">
+        <p class="label">This week</p>
+        <h2 class="h2">Weekly routine</h2>
+        <div class="card">
+          <div class="gauge">
+            <div class="ring-wrap">
+              <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trk" cx="50" cy="50" r="42"/><circle class="bar" id="ring" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg>
+              <div class="ring-mid"><div class="big" id="ring-n"></div><span id="ring-p"></span></div>
+            </div>
+            <p class="sub" id="ring-note"></p>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="big" id="st-streak"></div><span>Day streak</span></div>
+            <div class="stat"><div class="big" id="st-stars"></div><span>Stars earned</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row"><p class="label">Quests this week</p><span class="sample">Sample data</span></div>
+          <ul class="qlist" id="qlist"></ul>
+        </div>
+      </section>
+
+      <!-- Screen 4 -->
+      <section class="screen" id="v-stars" aria-label="Collection">
+        <p class="label">Star collection</p>
+        <h2 class="h2" id="col-title"></h2>
+        <p class="sub">Finish a month and its constellation goes up on the shelf.</p>
+        <div class="shelf" id="shelf"></div>
+      </section>
+
+      <!-- House -->
+      <section class="screen" id="v-house" aria-label="House">
+        <button class="back" id="back" type="button">← Back</button>
+        <p class="label">Our building</p>
+        <h2 class="h2">One window, one person</h2>
+        <p class="sub">When someone finishes today's quest, their window goes dark.</p>
+        <div class="house" id="house"></div>
+        <div class="card">
+          <p class="label">People in the building</p>
+          <ul class="flist" id="flist"></ul>
+          <button class="btn" id="go-add" type="button">Add a friend</button>
+        </div>
+      </section>
+
+      <!-- Add friend -->
+      <section class="screen" id="v-add" aria-label="Add a friend">
+        <button class="back" id="back2" type="button">← Back to the building</button>
+        <p class="label">Add a friend</p>
+        <h2 class="h2">Light a new window</h2>
+        <div class="card">
+          <div class="row"><p class="label">Your invite code</p><button class="btn ghost" id="copy" type="button">Copy</button></div>
+          <div class="codebox" id="mycode">k3t9wq2</div>
+          <p class="sub">Send this code to a friend. They type it in on their side.</p>
+        </div>
+        <div class="card">
+          <p class="label">Enter a friend's code</p>
+          <form class="add" id="addf" autocomplete="off">
+            <input id="addin" type="text" inputmode="text" maxlength="7" placeholder="7 characters" aria-label="Friend's invite code" spellcheck="false" autocapitalize="off">
+            <button class="btn" type="submit">Add</button>
+          </form>
+          <p class="msg" id="msg" role="status">Letters a–z and numbers 0–9, like b4jrus5.</p>
+        </div>
+        <div class="card">
+          <p class="label">How it works</p>
+          <ul class="steps">
+            <li>A friend becomes one window in your building.</li>
+            <li>You only see whether they finished today's quest. Their window goes dark when they do.</li>
+            <li>No names, no phone numbers. Just the code.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <nav class="tabbar" aria-label="Screens">
+      <div class="tabbar-in">
+        <button class="tab" data-go="today" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.3 6.8.8-5 4.6 1.4 6.8L12 17.6l-6.1 3.4 1.4-6.8-5-4.6 6.8-.8z"/></svg>Stars</button>
+        <button class="tab" data-go="quests" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5l1.8 1.8L9 5M4 12.5l1.8 1.8L9 11M4 18.5l1.8 1.8L9 17M13 7h7M13 13h7M13 19h7"/></svg>Quests</button>
+        <button class="tab" data-go="stars" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7" height="7" rx="1.5"/><rect x="13.5" y="4" width="7" height="7" rx="1.5"/><rect x="3.5" y="13" width="7" height="7" rx="1.5"/><rect x="13.5" y="13" width="7" height="7" rx="1.5"/></svg>Collection</button>
+      </div>
+    </nav>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STAR_MODE = 'glow';
+  var WEEK_GOAL = 4;           // days needed in a week to light that week's star (placeholder)
+  var STAR_PATH = 'M12 1.6l3.1 6.9 7.5.8-5.6 5 1.6 7.4L12 17.8 5.4 21.7 7 14.3 1.4 9.3l7.5-.8z';
+
+  /* ---------- Copy (all text lives here or in the markup above) ---------- */
+  var DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  var DAYNAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // 5 sets of 7 (Sun to Sat). Set number = week of the month, so quests get a little harder as the month goes on.
+  var QSETS = [
+    [ 'Switch off the lights in rooms you\u2019re not using before bed', 'Lower your phone\u2019s brightness', 'Close the curtains at night', 'Switch off the power strip',
+      'Use only your desk lamp tonight', 'Look up at the sky for one minute', 'Unplug something you\u2019re not using' ],
+    [ 'Unplug your phone charger once the phone is full', 'Turn the TV fully off instead of leaving it on standby', 'Switch your screens to dark mode tonight', 'Switch off the bathroom light every time you leave',
+      'Open the blinds and use daylight for the whole afternoon', 'Turn your monitor off whenever you step away', 'Unplug the printer or speaker you rarely use' ],
+    [ 'Spend an evening with half the lights off', 'Charge your phone in the daytime, not overnight', 'Set your laptop to sleep after five minutes', 'Cover or unplug the glowing standby lights in your bedroom',
+      'Take a ten-minute walk after dark and notice the lights', 'Unplug the kettle or rice cooker as soon as you\u2019re done', 'Put one lamp on a timer plug, or on a switch you can reach from bed' ],
+    [ 'Use only lamps, no ceiling light, for one evening', 'Do your chores before sunset and use natural light', 'Unplug every charger in one room', 'Keep your phone out of the bedroom for the night',
+      'Spend five minutes looking at the sky away from window light', 'Spend the last hour before bed without a screen', 'Switch off the router overnight if nobody needs it' ],
+    [ 'Spend a whole evening with only two lights on', 'Go screen-free for the last hour of the day', 'Unplug everything in one room, then plug back only what you use', 'Find the three biggest standby lights at home and switch them off',
+      'Spend fifteen minutes outside at night looking for stars', 'Invite one friend to light a window', 'Write down one light in your home you could live without' ]
+  ];
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  /* One sign per month = the sign that covers most of that month in the sun-sign table.
+     Shapes are simplified 5-star sketches (not survey-accurate); e = lines between stars. */
+  var SIGNS = [
+    { n: 'Capricorn',   r: 'Dec 22–Jan 19', p: [[8,12],[26,36],[52,50],[78,36],[94,14]],  e: [[0,1],[1,2],[2,3],[3,4]] },
+    { n: 'Aquarius',    r: 'Jan 20–Feb 18', p: [[10,20],[32,10],[54,26],[76,14],[92,38]], e: [[0,1],[1,2],[2,3],[3,4]] },
+    { n: 'Pisces',      r: 'Feb 19–Mar 20', p: [[8,10],[30,28],[52,48],[74,28],[94,10]],  e: [[0,1],[1,2],[2,3],[3,4]] },
+    { n: 'Aries',       r: 'Mar 21–Apr 19', p: [[8,46],[34,36],[60,26],[84,16],[94,32]],  e: [[0,1],[1,2],[2,3],[3,4]] },
+    { n: 'Taurus',      r: 'Apr 20–May 20', p: [[12,12],[34,24],[52,32],[84,48],[92,8]],  e: [[0,1],[1,2],[2,3],[2,4]] },
+    { n: 'Gemini',      r: 'May 21–Jun 21', p: [[28,8],[52,12],[22,34],[48,38],[36,52]],  e: [[0,1],[0,2],[1,3],[2,4],[3,4]] },
+    { n: 'Cancer',      r: 'Jun 22–Jul 22', p: [[50,28],[30,10],[72,8],[24,48],[78,48]],  e: [[0,1],[0,2],[0,3],[0,4]] },
+    { n: 'Leo',         r: 'Jul 23–Aug 22', p: [[16,46],[24,28],[40,14],[60,12],[90,38]], e: [[0,1],[1,2],[2,3],[3,4]] },
+    { n: 'Virgo',       r: 'Aug 23–Sep 22', p: [[10,16],[30,26],[54,32],[72,50],[86,22]], e: [[0,1],[1,2],[2,3],[2,4]] },
+    { n: 'Libra',       r: 'Sep 23–Oct 22', p: [[50,8],[14,34],[44,52],[84,40],[70,14]],  e: [[0,1],[1,2],[2,3],[3,4],[4,0]] },
+    { n: 'Scorpio',     r: 'Oct 23–Nov 22', p: [[12,10],[36,24],[44,36],[62,50],[88,40]], e: [[0,1],[1,2],[2,3],[3,4]] },
+    { n: 'Sagittarius', r: 'Nov 23–Dec 21', p: [[30,10],[52,16],[60,38],[34,44],[18,28]], e: [[0,1],[1,2],[2,3],[3,4],[4,0]] }
+  ];
+  // Bonus stars sit just outside the shape, tied to main stars 2 and 3
+  var BONUS_AT = [2, 3];
+  SIGNS.forEach(function (sg) {
+    var cx = 0, cy = 0;
+    sg.p.forEach(function (q) { cx += q[0]; cy += q[1]; });
+    cx /= sg.p.length; cy /= sg.p.length;
+    sg.b = BONUS_AT.map(function (m) {
+      var q = sg.p[m], dx = q[0] - cx, dy = q[1] - cy, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      return [Math.max(2, Math.min(98, q[0] + dx / d * 15)), Math.max(2, Math.min(56, q[1] + dy / d * 15))];
+    });
+  });
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stage = document.getElementById('stage');
+  var canvas = document.getElementById('sky');
+  var ctx = canvas.getContext('2d');
+  var root = getComputedStyle(document.documentElement);
+
+  function token(n) { return root.getPropertyValue(n).trim(); }
+  function hex(h) { h = h.replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
+  function mix(a, b, t) { return a.map(function (x, i) { return Math.round(x + (b[i] - x) * t); }); }
+  function rgb(a) { return 'rgb(' + a[0] + ',' + a[1] + ',' + a[2] + ')'; }
+  function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+  function smooth(x) { x = clamp01(x); return x * x * (3 - 2 * x); }
+  function $(id) { return document.getElementById(id); }
+
+  var C = {
+    litTop: hex(token('--sky-top-lit')), litBot: hex(token('--sky-bottom-lit')),
+    darkTop: hex(token('--sky-top-dark')), darkBot: hex(token('--sky-bottom-dark')),
+    star: hex(token('--star'))
+  };
+
+  /* ---------- Screen 1: windows + sky ---------- */
+  var NS = 'http://www.w3.org/2000/svg';
+  var group = $('windows');
+  var xs = [38, 77, 116], ys = [54, 100, 146, 192];
+  var wins = [];
+  ys.forEach(function (y) {
+    xs.forEach(function (x) {
+      var g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'win');
+      var glow = document.createElementNS(NS, 'rect');
+      glow.setAttribute('class', 'glow blur');
+      var pane = document.createElementNS(NS, 'rect');
+      pane.setAttribute('class', 'pane');
+      [glow, pane].forEach(function (r) {
+        r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', 26); r.setAttribute('height', 30); r.setAttribute('rx', 2);
+        g.appendChild(r);
+      });
+      group.appendChild(g);
+      wins.push(g);
+    });
+  });
+  var N = wins.length;
+
+  var T0 = 1000, SPAN = 5600, DUR = 700;
+  var start = new Array(N);
+  function shuffleStarts() {
+    var order = wins.map(function (_, i) { return i; }).sort(function () { return Math.random() - 0.5; });
+    order.forEach(function (wi, k) { start[wi] = T0 + k * (SPAN / (N - 1)) + (Math.random() * 160 - 80); });
+  }
+  shuffleStarts();
+  function progress(t) { var s = 0; for (var i = 0; i < N; i++) s += clamp01((t - start[i]) / DUR); return s / N; }
+
+  var stars = [];
+  for (var i = 0; i < 150; i++) {
+    var b = Math.pow(Math.random(), 1.8);
+    stars.push({ x: Math.random(), y: Math.random() * 0.8, b: b, t: 0.82 * (1 - b), r: 0.5 + b * 2.0, ph: Math.random() * 6.283, sp: 0.6 + Math.random() * 1.4 });
+  }
+
+  var W = 0, H = 0;
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function draw(now, p) {
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, rgb(mix(C.litTop, C.darkTop, p)));
+    g.addColorStop(1, rgb(mix(C.litBot, C.darkBot, p)));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var vis = smooth((p - s.t) / 0.2);
+      if (vis <= 0) continue;
+      var tw = reduce ? 1 : 0.82 + 0.18 * Math.sin(now / 1000 * s.sp + s.ph);
+      var a = STAR_MODE === 'grow' ? Math.min(1, vis * 3) * tw : vis * tw;
+      var r = STAR_MODE === 'glow' ? s.r : s.r * (0.35 + 0.65 * vis);
+      var x = s.x * W, y = s.y * H;
+      if (s.b > 0.75 && vis > 0.4) {
+        var halo = ctx.createRadialGradient(x, y, 0, x, y, r * 5);
+        halo.addColorStop(0, 'rgba(' + C.star[0] + ',' + C.star[1] + ',' + C.star[2] + ',' + (0.35 * a) + ')');
+        halo.addColorStop(1, 'rgba(' + C.star[0] + ',' + C.star[1] + ',' + C.star[2] + ',0)');
+        ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x, y, r * 5, 0, 6.283); ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(' + C.star[0] + ',' + C.star[1] + ',' + C.star[2] + ',' + a + ')';
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+    }
+  }
+
+  resize();
+  var t0 = performance.now();
+  var ready = false, entered = false;
+  function frame(now) {
+    var t = now - t0;
+    var p = entered ? 1 : progress(t);
+    if (!entered) {
+      for (var i = 0; i < N; i++) if (t >= start[i] && !wins[i].classList.contains('off')) wins[i].classList.add('off');
+      if (!ready && t > T0 + SPAN + DUR + 300) { ready = true; stage.classList.add('ready'); }
+    }
+    draw(now, p);
+    requestAnimationFrame(frame);
+  }
+  if (reduce) {
+    wins.forEach(function (w) { w.classList.add('off'); });
+    stage.classList.add('ready'); entered = true;
+    draw(0, 1);
+    window.addEventListener('resize', function () { resize(); draw(0, 1); });
+  } else {
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- Dates + state (sample data to start, saved on this device only) ---------- */
+  var KEY = 'starson-app-v3';
+  var now0 = new Date();
+  var TODAY_D = new Date(now0.getFullYear(), now0.getMonth(), now0.getDate());
+  var TODAY = TODAY_D.getDay(), MONTH = TODAY_D.getMonth(), YEAR = TODAY_D.getFullYear();
+  var SIGN = SIGNS[MONTH];
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function dkey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function wkStart(d) { return addDays(d, -d.getDay()); }
+  // A week belongs to the month its Wednesday falls in; that gives W1..W5 (a sixth week is ignored)
+  function wkNo(ws) { return Math.floor((addDays(ws, 3).getDate() - 1) / 7) + 1; }
+  function wkMonth(ws) { return addDays(ws, 3).getMonth(); }
+  var CUR_WS = wkStart(TODAY_D);
+  var view = 0;                                  // weeks away from this week
+  var S;
+  try { var raw = localStorage.getItem(KEY); if (raw) S = JSON.parse(raw); } catch (e) {}
+  if (!S) {
+    S = { days: {}, ev: [0, 0], evm: MONTH, friends: [['b4jrus5', 1], ['h9c3lt1', 0], ['x2mp8ne', 1]] };
+    for (var w = wkStart(new Date(YEAR, MONTH, 1)); w < CUR_WS; w = addDays(w, 7)) {
+      if (wkMonth(w) === MONTH) for (var k = 1; k <= 5; k++) S.days[dkey(addDays(w, k))] = 1;
+    }
+    for (var j = 0; j < TODAY; j++) S.days[dkey(addDays(CUR_WS, j))] = 1;
+  }
+  if (S.evm !== MONTH) { S.ev = [0, 0]; S.evm = MONTH; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  function wkDone(ws) { var n = 0; for (var i = 0; i < 7; i++) if (S.days[dkey(addDays(ws, i))]) n++; return n; }
+  function monthFlags() {
+    var flags = [0, 0, 0, 0, 0], first = wkStart(new Date(YEAR, MONTH, 1));
+    for (var k = 0; k < 7; k++) {
+      var ws = addDays(first, 7 * k);
+      if (wkMonth(ws) !== MONTH) continue;
+      var n = wkNo(ws);
+      if (n >= 1 && n <= 5 && wkDone(ws) >= WEEK_GOAL) flags[n - 1] = 1;
+    }
+    return flags;
+  }
+  function streak() {
+    var n = 0, d = S.days[dkey(TODAY_D)] ? TODAY_D : addDays(TODAY_D, -1);
+    while (S.days[dkey(d)]) { n++; d = addDays(d, -1); }
+    return n;
+  }
+  function questFor(ws, i) { return QSETS[Math.min(5, Math.max(1, wkNo(ws))) - 1][i]; }
+  function rangeLabel(ws) {
+    var e = addDays(ws, 6), a = MONTHS[ws.getMonth()].slice(0, 3);
+    return a + ' ' + ws.getDate() + ' – ' + (e.getMonth() === ws.getMonth() ? '' : MONTHS[e.getMonth()].slice(0, 3) + ' ') + e.getDate();
+  }
+
+  /* ---------- Glitter: a small burst, only when a star lights ---------- */
+  var COLORS = ['#F6D6E4', '#DCE2F2', '#BFD4FF', '#F4B860', '#E9A8C8', '#FFFFFF'];
+  function sparkle(host, xPct, yPct) {
+    if (reduce || !host) return;
+    for (var i = 0; i < 14; i++) {
+      var s = document.createElement('span');
+      var ang = Math.random() * 6.283, d = 14 + Math.random() * 26;
+      s.className = 'glit';
+      s.style.left = xPct + '%'; s.style.top = yPct + '%';
+      s.style.setProperty('--dx', Math.round(Math.cos(ang) * d) + 'px');
+      s.style.setProperty('--dy', Math.round(Math.sin(ang) * d) + 'px');
+      s.style.setProperty('--c', COLORS[i % COLORS.length]);
+      s.style.width = s.style.height = (2 + Math.random() * 2.5).toFixed(1) + 'px';
+      host.appendChild(s);
+      (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1100); })(s);
+    }
+  }
+  function conPct(pt) { return [(pt[0] + 4) / 108 * 100, (pt[1] + 4) / 66 * 100]; }
+
+  /* ---------- Constellation drawing (L = five on/off flags, one per week) ---------- */
+  function conSVG(sg, L, bonus, opts) {
+    opts = opts || {};
+    var cnt = L.reduce(function (a, b) { return a + b; }, 0);
+    var s = '<svg class="con" viewBox="-4 -4 108 66" role="img" aria-label="' + (opts.label || sg.n) + '">';
+    if (!opts.small) {
+      for (var gx = 0; gx <= 100; gx += 20) s += '<line class="grid" x1="' + gx + '" y1="-4" x2="' + gx + '" y2="62"/>';
+      for (var gy = 0; gy <= 60; gy += 20) s += '<line class="grid" x1="-4" y1="' + gy + '" x2="104" y2="' + gy + '"/>';
+    }
+    sg.e.forEach(function (ed) {
+      var on = L[ed[0]] && L[ed[1]], a = sg.p[ed[0]], b = sg.p[ed[1]];
+      s += '<line class="' + (on ? 'ln' : 'ln-off') + '" x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '"/>';
+    });
+    if (!opts.small) BONUS_AT.forEach(function (m, i) {
+      s += '<line class="' + (bonus[i] && L[m] ? 'ln' : 'ln-off') + '" x1="' + sg.b[i][0] + '" y1="' + sg.b[i][1] + '" x2="' + sg.p[m][0] + '" y2="' + sg.p[m][1] + '"/>';
+    });
+    sg.p.forEach(function (p, i) {
+      s += '<circle class="' + (L[i] ? 'on' : 'off') + '" cx="' + p[0] + '" cy="' + p[1] + '" r="3.2"/>';
+      if (opts.captions) s += '<text class="cap" x="' + p[0] + '" y="' + (p[1] + (p[1] > 30 ? 9 : -6)) + '">W' + (i + 1) + '</text>';
+    });
+    if (!opts.small) sg.b.forEach(function (p, i) {
+      s += '<circle class="' + (bonus[i] ? 'on' : 'bonus-off') + '" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (bonus[i] ? 2.2 : 2.4) + '"/>';
+    });
+    return s + '</svg>';
+  }
+  function starSVG() { return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12.4" r="12"/><path class="s-fill" d="' + STAR_PATH + '"/></svg>'; }
+
+  /* ---------- Render ---------- */
+  var weekEl = $('week');
+  var prevFlags = null, prevEv = null;
+  function render(fx) {
+    var L = monthFlags(), lw = L.reduce(function (a, b) { return a + b; }, 0), bonus = S.ev[0] + S.ev[1];
+    var mname = MONTHS[MONTH];
+    var vws = addDays(CUR_WS, 7 * view), vn = wkNo(vws), curN = wkNo(CUR_WS);
+    $('t-month').textContent = mname + ' · Week ' + curN;
+    $('wk-range').textContent = rangeLabel(vws) + (view === 0 ? ' · this week' : '');
+    $('wk-prev').disabled = view <= -5;
+    $('wk-next').disabled = view >= 1;
+
+    weekEl.innerHTML = '';
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(vws, i), isDone = !!S.days[dkey(d)], isToday = dkey(d) === dkey(TODAY_D), isFuture = d > TODAY_D;
+      var el = document.createElement('div');
+      el.className = 'day' + (isDone ? ' done' : '') + (isToday ? ' today' : '') + (isFuture ? ' future' : '');
+      el.innerHTML = starSVG() + '<span>' + d.getDate() + '</span>';
+      el.setAttribute('role', 'img');
+      el.setAttribute('aria-label', DAYNAMES[i] + ' ' + d.getDate() + (isDone ? ', star lit' : ', star off'));
+      weekEl.appendChild(el);
+    }
+    var cnt = wkDone(vws), left = Math.max(0, WEEK_GOAL - cnt), lit = cnt >= WEEK_GOAL;
+    if (view > 0) $('week-note').textContent = 'Next week. Your quests unlock one day at a time.';
+    else if (lit) $('week-note').textContent = 'Star ' + Math.min(5, vn) + ' of ' + SIGN.n + ' is lit for this week.';
+    else if (view < 0) $('week-note').textContent = cnt + ' of 7 days done. This week’s star stayed dim.';
+    else $('week-note').textContent = 'Finish ' + WEEK_GOAL + ' days this week to light star ' + Math.min(5, vn) + ' of ' + SIGN.n + '. ' + left + ' to go.';
+
+    var tdone = !!S.days[dkey(TODAY_D)];
+    $('today-q').textContent = questFor(CUR_WS, TODAY);
+    var tb = $('today-btn');
+    tb.setAttribute('aria-pressed', tdone ? 'true' : 'false');
+    tb.textContent = tdone ? 'Done ✓' : 'Done';
+
+    $('con-title').textContent = mname + ' · ' + SIGN.n;
+    $('con-big').innerHTML = conSVG(SIGN, L, S.ev, { captions: true, label: SIGN.n + ' constellation, ' + lw + ' stars lit' });
+    $('con-note').textContent = 'Star ' + lw + ' of 5' + (bonus ? ' · ' + bonus + ' bonus' : '') + ' · ' + SIGN.r;
+    var eb = $('ev-btn');
+    eb.setAttribute('aria-pressed', S.ev[0] ? 'true' : 'false');
+    eb.textContent = S.ev[0] ? 'Done ✓' : 'Done';
+
+    var ccnt = wkDone(CUR_WS), pct = Math.round(ccnt / 7 * 100);
+    $('ring').style.strokeDashoffset = String(263.9 * (1 - ccnt / 7));
+    $('ring-n').textContent = ccnt + '/7';
+    $('ring-p').textContent = pct + '%';
+    $('ring-note').textContent = ccnt >= WEEK_GOAL ? 'You hit this week’s goal.' : (WEEK_GOAL - ccnt) + ' more days to this week’s goal.';
+    $('st-streak').textContent = String(streak());
+    $('st-stars').textContent = String(lw + bonus);
+    var ql = $('qlist'); ql.innerHTML = '';
+    for (var q = 0; q < 7; q++) {
+      var dd = addDays(CUR_WS, q), qd = !!S.days[dkey(dd)];
+      var cls = 'q' + (qd ? ' done' : '') + (q < TODAY && !qd ? ' miss' : '') + (q > TODAY ? ' future' : '');
+      var inner = '<span class="d">' + DAYNAMES[q].toUpperCase() + '</span><span>' + questFor(CUR_WS, q) + '</span><span class="st"></span>';
+      var li = document.createElement('li');
+      if (q === TODAY) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = cls; b.innerHTML = inner;
+        b.setAttribute('role', 'checkbox'); b.setAttribute('aria-checked', qd ? 'true' : 'false');
+        b.addEventListener('click', toggleToday);
+        li.appendChild(b);
+      } else { li.innerHTML = '<div class="' + cls + '">' + inner + '</div>'; }
+      ql.appendChild(li);
+    }
+
+    $('col-title').textContent = 'Collected ' + (lw === 5 ? 1 : 0) + ' / 12';
+    var sh = $('shelf'); sh.innerHTML = '';
+    MONTHS.forEach(function (m, mi) {
+      var sg = SIGNS[mi], dv = document.createElement('div');
+      dv.className = 'slot' + (mi === MONTH ? ' now' : '');
+      dv.innerHTML = conSVG(sg, mi === MONTH ? L : [0, 0, 0, 0, 0], [0, 0], { small: true, label: sg.n }) +
+        '<span class="m">' + (mi + 1 < 10 ? '0' : '') + (mi + 1) + ' ' + m.slice(0, 3).toUpperCase() + '</span>' +
+        '<span class="sg">' + sg.n + '</span><span class="rg">' + sg.r + '</span>';
+      sh.appendChild(dv);
+    });
+
+    renderHouse();
+
+    // glitter only on a newly lit star
+    if (fx && fx.day && tdone && view === 0) sparkle(weekEl.children[TODAY], 50, 40);
+    if (prevFlags) for (var f = 0; f < 5; f++) if (L[f] && !prevFlags[f]) { var c = conPct(SIGN.p[f]); sparkle($('con-big'), c[0], c[1]); }
+    if (prevEv) [0, 1].forEach(function (e) { if (S.ev[e] && !prevEv[e]) { var c2 = conPct(SIGN.b[e]); sparkle($('con-big'), c2[0], c2[1]); } });
+    prevFlags = L.slice(); prevEv = S.ev.slice();
+  }
+  function toggleToday() { var k = dkey(TODAY_D); if (S.days[k]) delete S.days[k]; else S.days[k] = 1; save(); render({ day: true }); }
+  $('wk-prev').addEventListener('click', function () { view--; render(); });
+  $('wk-next').addEventListener('click', function () { view++; render(); });
+
+  /* ---------- House ---------- */
+  function renderHouse() {
+    var cells = [{ me: true, on: !S.days[dkey(TODAY_D)] }];
+    S.friends.forEach(function (f) { cells.push({ on: !!f[1] }); });
+    while (cells.length < 12) cells.push({ empty: true });
+    var s = '<svg viewBox="0 0 180 300" role="img" aria-label="Our building, ' + (S.friends.length + 1) + ' windows"><defs><filter id="soft2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter></defs>';
+    s += '<rect x="118" y="6" width="26" height="16" rx="2" fill="var(--brown-deep)"/><rect x="20" y="30" width="140" height="270" rx="3" fill="var(--brown)"/><rect x="14" y="22" width="152" height="12" rx="2" fill="var(--brown-edge)"/>';
+    cells.forEach(function (c, i) {
+      var x = xs[i % 3], y = ys[Math.floor(i / 3)];
+      var cls = 'hw' + (c.empty ? ' empty' : (c.on ? '' : ' off')) + (c.me ? ' me' : '');
+      s += '<g class="' + cls + '"><rect class="glow" filter="url(#soft2)" x="' + x + '" y="' + y + '" width="26" height="30" rx="2"/><rect class="pane" x="' + x + '" y="' + y + '" width="26" height="30" rx="2"/>' +
+        (c.me ? '<rect class="frame" x="' + (x - 3) + '" y="' + (y - 3) + '" width="32" height="36" rx="3"/>' : '') + '</g>';
+    });
+    s += '<rect class="door" x="76" y="254" width="28" height="46" rx="14" ry="14"/></svg>';
+    $('house').innerHTML = s;
+
+    var fl = $('flist'); fl.innerHTML = '';
+    var all = [['Me', !S.days[dkey(TODAY_D)]]].concat(S.friends.map(function (f) { return [f[0], !!f[1]]; }));
+    all.forEach(function (f, i) {
+      var li = document.createElement('li'); li.className = 'f';
+      li.innerHTML = '<span' + (i ? ' class="code" style="font-size:16px"' : '') + '>' + f[0] + '</span><span class="row" style="gap:8px"><small>' + (f[1] ? 'Quest left' : 'Done today') + '</small><span class="dot ' + (f[1] ? 'on' : 'off') + '" aria-hidden="true"></span></span>';
+      fl.appendChild(li);
+    });
+  }
+
+  $('today-btn').addEventListener('click', toggleToday);
+  $('ev-btn').addEventListener('click', function () { S.ev[0] = S.ev[0] ? 0 : 1; save(); render(); });
+
+  $('copy').addEventListener('click', function () {
+    var code = $('mycode').textContent, m = $('msg');
+    function ok() { m.textContent = 'Code copied.'; }
+    function no() {
+      var r = document.createRange(); r.selectNodeContents($('mycode'));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      m.textContent = 'Code selected. Press and hold to copy it.';
+    }
+    try { navigator.clipboard.writeText(code).then(ok, no); } catch (e) { no(); }
+  });
+  $('addf').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('addin').value.trim().toLowerCase(), m = $('msg');
+    if (!/^[a-z0-9]{7}$/.test(v)) { m.textContent = 'Use 7 characters: letters a–z and numbers 0–9.'; return; }
+    if (v === $('mycode').textContent || S.friends.some(function (f) { return f[0] === v; })) { m.textContent = 'That code is already in your building.'; return; }
+    if (S.friends.length >= 11) { m.textContent = 'Every window is taken.'; return; }
+    S.friends.push([v, 1]); save(); $('addin').value = ''; m.textContent = v + ' moved into a window.'; render();
+  });
+
+  /* ---------- Routing: #today #quests #stars #house #add, nothing = screen 1 ---------- */
+  var VIEWS = ['today', 'quests', 'stars', 'house', 'add'];
+  var prev = 'today';
+  function route() {
+    var h = (location.hash || '').replace('#', '');
+    var app = $('app');
+    if (VIEWS.indexOf(h) < 0) {
+      app.hidden = true; $('stage').hidden = false; $('ground').hidden = false;
+      if (entered && !reduce) {
+        entered = false; ready = false; stage.classList.remove('ready');
+        wins.forEach(function (w) { w.classList.remove('off'); });
+        shuffleStarts(); t0 = performance.now();
+      }
+      return;
+    }
+    entered = true;
+    wins.forEach(function (w) { w.classList.add('off'); });
+    stage.classList.add('ready');
+    $('stage').hidden = true; $('ground').hidden = true; app.hidden = false;
+    VIEWS.forEach(function (v) { $('v-' + v).classList.toggle('on', v === h); });
+    document.querySelectorAll('.tab').forEach(function (t) {
+      if (t.dataset.go === h) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    if (h !== 'house' && h !== 'add') prev = h;
+    $('screens').scrollTop = 0;
+  }
+  function go(v) { location.hash = v; }
+  $('enter').addEventListener('click', function () { go('today'); });
+  $('home').addEventListener('click', function () { history.pushState('', document.title, location.pathname + location.search); route(); });
+  $('who').addEventListener('click', function () { go('house'); });
+  $('back').addEventListener('click', function () { go(prev); });
+  $('go-add').addEventListener('click', function () { go('add'); });
+  $('back2').addEventListener('click', function () { go('house'); });
+  document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { go(t.dataset.go); }); });
+  window.addEventListener('hashchange', route);
+
+  render();
+  route();
+})();
+</script>
+
+</body></html>
